@@ -162,6 +162,7 @@ int main(int argc, char const *argv[])
 
 		newGame(0, 100, 5);
 		game.aspectRatio = 640.f / 420.f;
+		game.debuglevel = 1;
 
 		//While game not terminating
 		while( !quit )
@@ -188,7 +189,7 @@ int main(int argc, char const *argv[])
 				}
 			}
 
-			float step = (GetTickCount() - lastTick) / 1000.0;
+			float step = (GetTickCount() - lastTick) / 1000.0 * 3;
 			lastTick = GetTickCount();
 
 			if (step > 0.1f)
