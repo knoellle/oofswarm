@@ -12,7 +12,6 @@
 
 struct Tile
 {
-	// float bonus[3];
 	int   buildingType;
 	int   buildingLevel;
 };
@@ -24,8 +23,20 @@ struct Planet
 	int   seed;
 	Tile  *tiles;
 	int numTiles;
+	int team;
 
 	float shipPresence[3];
+};
+
+struct ShipClass
+{
+	float acceleration;
+	float speed;
+	float damageModifiers[3];
+	float sensorRange;
+	float weaponRange;
+	float fireSpeed;
+	float baseHealth;
 };
 
 struct Ship
@@ -37,10 +48,21 @@ struct Ship
 	//      1 = cruiser
 	//      2 = bomber
 	int type;
+	ShipClass* values;
 	// team 0 = player
 	//      1 = enemy
 	int team;
 	float health;
+	Ship* target;
+	float weaponTimer;
+};
+
+struct Wave
+{
+	int shipsToSpawn[3];
+	float countdown;
+	Vector2f spawnAreaP1;
+	Vector2f spawnAreaP2;
 };
 
 struct Game
@@ -52,25 +74,36 @@ struct Game
 	Planet *planets;
 	int numPlanets;
 
+	ShipClass shipClasses[3];
+
 	Ship *ships;
 	int numShips;
 	int lenShips;
 
+	Wave currentWave;
+
 	// ratio of height and width of the window
 	float aspectRatio;
+
+	Vector2f cameraShift;
+	float cameraZoom;
 
 	// 0: none
 	// 1: visual indicators
 	// 2: console outputs
 	int debuglevel;
+	float speedModifier;
 };
 
 Game game;
 
 void clearGame()
 {
+	game.speedModifier = 1.f;
 	game.seed = 0;
 	game.galaxyRadius = 0;
+	game.cameraShift = vec2f(0.f, 0.f);
+	game.cameraZoom = 1.f;
 	if (game.numPlanets > 0)
 	{
 		for (int i = 0; i < game.numPlanets; i++)
@@ -87,18 +120,35 @@ Ship* spawnShip(Vector2f position, int type, int team)
 	// expand array if necessary
 	if (game.numShips == game.lenShips)
 	{
+		printf("Increasing array size from %d to %d\n", game.lenShips, game.lenShips + 100);
 		game.lenShips += 100;
-		game.ships = (Ship*) realloc(game.ships, game.lenShips * sizeof(Ship));
+		Ship* newarray = (Ship*) realloc(game.ships, game.lenShips * sizeof(Ship));
+		if (newarray)
+		{
+			game.ships = newarray;
+		}
+		else
+		{
+			printf("Couldn't increase array size, aborting spawn.\n");
+			return NULL;
+		}
+
 	}
+
+	// printf("%d\n", game.ships);
 
 	Ship* s = &game.ships[game.numShips];
 	game.numShips++;
-	
+
 	s->position = position;
 	s->velocity = vec2f(0.f, 0.f);
 	s->type = type;
+	s->values = &game.shipClasses[type];
 	s->team = team;
-	s->health = 100;
+	s->health = s->values->baseHealth;
+	s->target = NULL;
+	s->weaponTimer = 0.f;
+	// printf("spawning ship #%d\n", game.numShips);
 	return s;
 }
 
@@ -127,9 +177,10 @@ void newGame(int seed, float galaxyRadius, int planets)
 	for (int i = 0; i < game.numPlanets; i++)
 	{
 		Planet* planet = &game.planets[i];
+		planet->team = i < planets/2 ? 0 : 1;
 		srand(game.planets[i].seed);
 		// positioning
-		planet->position = vec2f(cos(a) * r, sin(a) * r);
+		planet->position = vecscale(vec2f(cos(a), sin(a)), sqrt(r / game.galaxyRadius) * game.galaxyRadius);
 		r = r + game.galaxyRadius / game.numPlanets;
 		a = a + planet->seed;
 		// size
@@ -139,23 +190,61 @@ void newGame(int seed, float galaxyRadius, int planets)
 		for (int t = 0; t < planet->numTiles; t++)
 		{
 			Tile* tile = &planet->tiles[i];
-			// tile->bonus[0] = rand() % 100 > 75 ? rand() % 3 : 0;
-			// tile->bonus[1] = rand() % 100 > 75 ? rand() % 3 : 0;
-			// tile->bonus[2] = rand() % 100 > 75 ? rand() % 3 : 0;
 		}
 	}
+
+	game.currentWave.spawnAreaP1 = vec2f(-50, 100);
+	game.currentWave.spawnAreaP2 = vec2f( 50, 100);
+	game.currentWave.shipsToSpawn[0] = 5;
+	game.currentWave.countdown = 3.f;
 
 	spawnShip(vec2f(25.f,-25.f),0,0);
 }
 
 void tickGame(float step)
 {
+	step *= game.speedModifier;
 	// advance timers and process production values
 	game.gameAge += step;
 
+	// "remove" dead ships
+	for (int i = game.numShips; i >= 0; i--)
+	{
+		if (game.ships[i].health < 0.f)
+		{
+			for (int j = 0; j < game.numShips; j++)
+			{
+				if (game.ships[j].target == &game.ships[i])
+				{
+					game.ships[j].target = NULL;
+				}
+			}
+			game.ships[i] = game.ships[game.numShips - 1];
+			game.ships[i].target = NULL;
+			game.numShips--;
+		}
+	}
+
+	// tick wave
+	game.currentWave.countdown -= step;
+	if (game.currentWave.countdown < 0.f)
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			while (game.currentWave.shipsToSpawn[i] > 0)
+			{
+				game.currentWave.shipsToSpawn[i] -= 1;
+				Ship* s = spawnShip(randomBetween(game.currentWave.spawnAreaP1, game.currentWave.spawnAreaP2), i, 1);
+				// printf("%f %f\n", s->position.x, s->position.y);
+			}
+		}
+	}
+
 	if ((int)game.gameAge != (int)(game.gameAge+step))
 	{
-		spawnShip(vec2f(rand()%50, rand()%50), 0, 0);
+		float a = (rand() % 360) / (180.f/3.41f);
+		Ship* s = spawnShip(vec2f(cos(a)*game.planets[0].radius, sin(a)* game.planets[0].radius), 0, 0);
+		s->velocity = normalize(vecsub(s->position, game.planets[0].position));
 	}
 
 	// accumulate ship presence
@@ -171,78 +260,116 @@ void tickGame(float step)
 		p->shipPresence[2] = 0;
 		for (int s = 0; s < game.numShips; s++)
 		{
+			if (game.ships[i].team != p->team) continue;
 			float r = veclen(vecsub(game.ships[s].position, p->position));
-			p->shipPresence[game.ships[s].type] += min(1.f / r, 1.f); //r < p->radius * 4.f ? 1.f : 0.f;
+			if (r > 0.f)
+				p->shipPresence[game.ships[s].type] += min(1.f / r, 1.f); //r < p->radius * 4.f ? 1.f : 0.f;
 			presenceSum[game.ships[s].type] += p->shipPresence[game.ships[s].type];
 		}
 	}
 
+	// move ships
 	for (int i = 0; i < game.numShips; i++)
 	{
 		Ship* s = &game.ships[i];
 		Vector2f force;
 		force = vec2f(0.f, 0.f);
-
-		Vector2f planetAttraction = vec2f(0.f, 0.f);
-		Planet bestPlanet;
-		float bestFactor = 10000.f;
-		for (int j = 0; j < game.numPlanets; j++)
+		if (s->target == NULL) // cruise mode
 		{
-			float r = veclen(vecsub(game.planets[j].position, s->position));
-			float f = sqrt(sqrt(r)) * game.planets[j].shipPresence[s->type];
-			if (f < bestFactor)
+			Vector2f planetAttraction = vec2f(0.f, 0.f);
+			Planet bestPlanet;
+			float bestFactor = 10000.f;
+			for (int j = 0; j < game.numPlanets; j++)
 			{
-				bestPlanet = game.planets[j];
-				bestFactor = f;
-			}
+				float r = veclen(vecsub(game.planets[j].position, s->position));
+				float f;
+				if (game.planets[j].team == 0)
+				{
+					f = sqrt(sqrt(r)) * game.planets[j].shipPresence[s->type];
+				} else {
+					f = r * 1000;
+				}
+				if (f < bestFactor)
+				{
+					bestPlanet = game.planets[j];
+					bestFactor = f;
+				}
 
-			// planet evasion
-			// if (r < game.planets[j].radius * 1.1f)
-			// {
-				// force = vecadd(force, vecscale(normalize(vecsub(s->position, game.planets[j].position)), 
-				// 	max(min(2.f * game.planets[j].radius - r, 10), 0)));
-			// }
+				// planet evasion
+				if (r < game.planets[j].radius * 1.1f)
+				{
+					force = vecadd(force, vecscale(normalize(vecsub(s->position, game.planets[j].position)), 
+						max(min(2.f * game.planets[j].radius - r, 10), 0)));
+				}
+			}
+			planetAttraction = normalize(vecsub(bestPlanet.position, s->position));
+
+			Vector2f boid = vec2f(0.f, 0.f);
+			Vector2f positionSum = vec2f(0.f, 0.f);
+			int numPeers;
+			for (int j = 0; j < game.numShips; j++)
+			{
+				float r = veclen(vecsub(s->position, game.ships[j].position));
+				if (s->team != game.ships[j].team)
+				{
+					if (r < s->values->sensorRange)
+					{
+						if (random() % 100 > 90)
+						{
+							s->target = &game.ships[j];
+							break;
+						}
+					}
+					continue;
+				}
+
+				// seperation
+				if (r < 5.f)
+				{
+					force = vecadd(force, normalize(vecsub(s->position, game.ships[j].position)));
+				}
+
+				// alignment
+				if (r < 2.f)
+				{
+					force = vecadd(force, vecscale(normalize(vecsub(game.ships[j].velocity, s->velocity)), 2.f));
+				}
+
+				// cohesion pt. 1
+				if (r < 5.f)
+				{
+					numPeers++;
+					positionSum = vecadd(positionSum, game.ships[j].position);
+				}
+			}
+			// cohesion pt. 2
+			if (numPeers > 0)
+				force = vecadd(force, normalize(vecsub(vecscale(positionSum, 1.f/numPeers), s->position)));
+
+			force = vecadd(force, vecscale(normalize(planetAttraction), 3.f));
+		} else { // target mode
+			// continue;
+			Vector2f relpos = vecsub(s->target->position, s->position);
+
+			float r = veclen(relpos);
+			if (r < s->values->weaponRange)
+			{
+				// weapon animation
+				// s->weaponTimer += step * s->values->fireSpeed;
+				// if (s->weaponTimer > 1000.f)
+				// 	s->weaponTimer = 0.f;
+				// impart damage
+				s->target->health -= step * s->values->damageModifiers[s->target->type];
+			}
+			if (r > s->values->weaponRange || s->target->health <= 0.f)
+			{
+				s->target = NULL;
+			}
+			force = vecadd(force, normalize(relpos));
 		}
-		planetAttraction = normalize(vecsub(bestPlanet.position, s->position));
 
-		Vector2f boid = vec2f(0.f, 0.f);
-		Vector2f positionSum = vec2f(0.f, 0.f);
-		int numPeers;
-		for (int j = 0; j < game.numShips; j++)
-		{
-			float r = veclen(vecsub(s->position, game.ships[j].position));
-			
-			// seperation
-			if (r < 2.f)
-			{
-				force = vecadd(force, normalize(vecsub(s->position, game.ships[j].position)));
-			}
-
-			// alignment
-			if (r < 1.f)
-			{
-				force = vecadd(force, vecscale(normalize(vecsub(game.ships[j].velocity, s->velocity)), 2.f));
-			}
-
-			// cohesion pt. 1
-			if (r < 5.f)
-			{
-				numPeers++;
-				positionSum = vecadd(positionSum, game.ships[j].position);
-			}
-		}
-
-		// cohesion pt. 2
-		force = vecadd(force, normalize(vecsub(vecscale(positionSum, 1.f/numPeers), s->position)));
-
-
-		force = vecadd(force, vecscale(normalize(planetAttraction), 3.f));
-
-		// force = vecadd(force, vec2f(sin(game.gameAge),cos(game.gameAge)));
-
-		printf("planetAttraction = (%f, %f)\n", planetAttraction.x, planetAttraction.y);
 		s->force = force;
-		s->velocity = normalize(vecadd(s->velocity, vecscale(force, step)));
+		s->velocity = normalize(vecadd(s->velocity, vecscale(force, step * 0.5f)));
 		s->position = vecadd(s->position, vecscale(s->velocity, step * 5.f));
 	}
 	// normalize velocity and adjust it as per type
@@ -255,30 +382,37 @@ void renderGame()
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glOrtho(-100.f * game.aspectRatio, 100.f * game.aspectRatio, -100.f, 100.f, -1.f, 100.f);
+
 	// Reset camera
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();
 
 	// Clear color buffer
 	glClear( GL_COLOR_BUFFER_BIT );
-	
-	// Render background
+
+	// Render background before setting camera values (skybox)
 	glColor3f(0.1f, 0.1f, 0.1f);
 	glBegin( GL_QUADS );
 		glVertex2f( -100.f * game.aspectRatio, -100.f );
-		glVertex2f( 100.f * game.aspectRatio, -100.f );
-		glVertex2f( 100.f * game.aspectRatio, 100.f );
-		glVertex2f( -100.f * game.aspectRatio, 100.f );
+		glVertex2f(  100.f * game.aspectRatio, -100.f );
+		glVertex2f(  100.f * game.aspectRatio,  100.f );
+		glVertex2f( -100.f * game.aspectRatio,  100.f );
 	glEnd();
-	glColor3f(1.f, 1.f, 1.f);
+
+	// set camera values
+	glTranslatef(game.cameraShift.x, game.cameraShift.y, 0.f);
+	glScalef(game.cameraZoom, game.cameraZoom, 1.f);
 
 	glClear( GL_DEPTH_BUFFER_BIT );
-
 	// Render world
+	glColor3f(1.f, 1.f, 1.f);
 	for (int i = 0; i < game.numPlanets; i++)
 	{
 		float r = game.planets[i].radius;
-		glColor3f(game.planets[i].shipPresence[1]/1.f, game.planets[i].shipPresence[0]/100.f, game.planets[i].shipPresence[2]);
+
+		// Todo: set color to white and use pixelshader instead
+		glColor3f(game.planets[i].team/3.f, game.planets[i].shipPresence[0]/100.f, game.planets[i].shipPresence[2]);
+
 		glPushMatrix();
 			glTranslatef(game.planets[i].position.x, game.planets[i].position.y, 0);
 			glBegin( GL_QUADS );
@@ -292,15 +426,40 @@ void renderGame()
 
 	for (int i = 0; i < game.numShips; i++)
 	{
-		glColor3f(1.f, 0.f, 0.f);
+		Ship* s = &game.ships[i];
+		if (s->team == 0)
+		{
+			glColor3f(0.f, 0.f, 1.f);
+		} else {
+			glColor3f(1.f, 0.f, 0.f);
+		}
 		glPushMatrix();
-			glTranslatef(game.ships[i].position.x, game.ships[i].position.y, 0);
+			glTranslatef(s->position.x, s->position.y, 0);
 			glBegin( GL_POINTS );
 				glVertex2f(0, 0);
 			glEnd();
 			glBegin( GL_LINES );
-				// glVertex2f(0, 0);
-				// glVertex2f(game.ships[i].velocity.x*2, game.ships[i].velocity.y*2);
+				if (game.debuglevel >= 1)
+				{
+					glColor3f(1.f, 0.f, 0.f);
+					glVertex2f(0, 0);
+					glVertex2f(s->velocity.x*2, s->velocity.y*2);
+					glColor3f(0.f, 1.f, 0.f);
+					glVertex2f(0, 0);
+					glVertex2f(s->force.x*2, s->force.y*2);
+				}
+				if (s->target != NULL)
+				{
+					if ((int)(s->weaponTimer*2) % 2 > 0)
+					{
+						Vector2f relpos = vecsub(s->target->position, s->position);
+						if (veclen(relpos) < s->values->weaponRange)
+						{
+							glVertex2f(0, 0);
+							glVertex2f(relpos.x, relpos.y);
+						}
+					}
+				}
 			glEnd();
 		glPopMatrix();
 	}

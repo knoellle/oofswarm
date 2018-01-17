@@ -3,9 +3,10 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include <GL/glu.h>
-#include "game.c"
-
 #include <sys/time.h>
+
+#include <fenv.h>
+#include "game.c"
 
 unsigned GetTickCount()
 {
@@ -138,11 +139,34 @@ void close()
 
 void handleKeys( unsigned char key, int x, int y )
 {
-
+	if (key == SDL_SCANCODE_KP_PLUS)
+	{
+		game.speedModifier *= 2.f;
+	}
+	if (key == SDL_SCANCODE_KP_MINUS)
+	{
+		game.speedModifier /= 2.f;
+	}
+	if (key == SDL_SCANCODE_S)
+	{
+		game.currentWave.shipsToSpawn[0] = 50;
+	}
+	if (key == SDL_SCANCODE_D)
+	{
+		for (int i = 0; i < game.numShips; ++i)
+		{
+			if (game.ships[i].target != NULL)
+			{
+				printf("p%d h%f l%f %f\n", game.ships[i].target, game.ships[i].target->health,
+					game.ships[i].target->position.x, game.ships[i].target->position.y);
+			}
+		}
+	}
 }
 
 int main(int argc, char const *argv[])
 {
+	feenableexcept(FE_INVALID | FE_OVERFLOW);
 	window_width = 640;
 	window_height = 420;
 	if (!initLibs(window_width, window_height))
@@ -151,18 +175,34 @@ int main(int argc, char const *argv[])
 		return 1;
 	}
 
-		//Main loop flag
+		// Main loop flag
 		bool quit = false;
 
-		//Event handler
+		// Event handler
 		SDL_Event e;
 		
-		//Enable text input
+		// Enable text input
 		SDL_StartTextInput();
 
-		newGame(0, 100, 5);
+		// define ship classes
+		ShipClass fighter;
+		fighter.acceleration = 2.f;
+		fighter.speed = 2.f;
+		fighter.damageModifiers[0] = 50;
+		fighter.sensorRange = 50.f;
+		fighter.weaponRange = 7.5f;
+		fighter.fireSpeed = 10.f;
+		fighter.baseHealth = 100.f;
+		game.shipClasses[0] = fighter;
+
+		// for (int i = 0; i < 10; ++i)
+		// {
+		// 	printf("%f\n", randomFloat());
+		// }
+
+		newGame(0, 500, 50);
 		game.aspectRatio = 640.f / 420.f;
-		game.debuglevel = 1;
+		game.debuglevel = 0;
 
 		//While game not terminating
 		while( !quit )
@@ -175,11 +215,11 @@ int main(int argc, char const *argv[])
 				}
 
 				// Handle keypress with current mouse position
-				else if( e.type == SDL_TEXTINPUT )
+				else if( e.type == SDL_KEYDOWN )
 				{
 					int x = 0, y = 0;
 					SDL_GetMouseState( &x, &y );
-					handleKeys( e.text.text[ 0 ], x, y );
+					handleKeys( e.key.keysym.scancode, x, y );
 				}
 
 				// process resizing
@@ -187,9 +227,24 @@ int main(int argc, char const *argv[])
 				{
 					resizeWindow(e);
 				}
+
+				// zoom
+				else if (e.type == SDL_MOUSEWHEEL)
+				{
+					int numScrolls = e.wheel.y;
+					// printf("%d\n", numScrolls);
+					if (numScrolls == 1)
+					{
+						game.cameraZoom *= 1.1f;
+					}
+					if (numScrolls == -1)
+					{
+						game.cameraZoom /= 1.1f;
+					}
+				}
 			}
 
-			float step = (GetTickCount() - lastTick) / 1000.0 * 3;
+			float step = (GetTickCount() - lastTick) / 1000.0;
 			lastTick = GetTickCount();
 
 			if (step > 0.1f)
