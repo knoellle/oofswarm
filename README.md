@@ -7,7 +7,7 @@
 * Spawn enemy ship wave
     `S`
 * Pause the game
-    `Space`(not yet implemented)
+    `Space`
 
 ## Compiling
 After cloning the repo, you can compile and run the game with

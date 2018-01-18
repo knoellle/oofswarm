@@ -153,14 +153,22 @@ void handleKeys( unsigned char key, int x, int y )
 	}
 	if (key == SDL_SCANCODE_D)
 	{
-		for (int i = 0; i < game.numShips; ++i)
+		// for (int i = 0; i < game.numShips; ++i)
+		// {
+		// 	if (game.ships[i].target != NULL)
+		// 	{
+		// 		printf("p%d h%f l%f %f\n", game.ships[i].target, game.ships[i].target->health,
+		// 			game.ships[i].target->position.x, game.ships[i].target->position.y);
+		// 	}
+		// }
+		for (int i = 0; i < game.numPlanets; ++i)
 		{
-			if (game.ships[i].target != NULL)
-			{
-				printf("p%d h%f l%f %f\n", game.ships[i].target, game.ships[i].target->health,
-					game.ships[i].target->position.x, game.ships[i].target->position.y);
-			}
+			printf("%d %f %f %f\n", game.planets[i].team, game.planets[i].shipPresence[0], game.planets[i].shipPresence[1], game.planets[i].shipPresence[2]);
 		}
+	}
+	if (key == SDL_SCANCODE_SPACE)
+	{
+		game.speedModifier *= -1.f;
 	}
 }
 

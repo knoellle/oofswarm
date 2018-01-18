@@ -203,6 +203,10 @@ void newGame(int seed, float galaxyRadius, int planets)
 
 void tickGame(float step)
 {
+	if (game.speedModifier <= 0.f)
+	{
+		return;
+	}
 	step *= game.speedModifier;
 	// advance timers and process production values
 	game.gameAge += step;
@@ -264,8 +268,10 @@ void tickGame(float step)
 			float r = veclen(vecsub(game.ships[s].position, p->position));
 			if (r > 0.f)
 				p->shipPresence[game.ships[s].type] += min(1.f / r, 1.f); //r < p->radius * 4.f ? 1.f : 0.f;
-			presenceSum[game.ships[s].type] += p->shipPresence[game.ships[s].type];
 		}
+		presenceSum[0] += p->shipPresence[0];
+		presenceSum[1] += p->shipPresence[1];
+		presenceSum[2] += p->shipPresence[2];
 	}
 
 	// move ships
@@ -355,9 +361,9 @@ void tickGame(float step)
 			if (r < s->values->weaponRange)
 			{
 				// weapon animation
-				// s->weaponTimer += step * s->values->fireSpeed;
-				// if (s->weaponTimer > 1000.f)
-				// 	s->weaponTimer = 0.f;
+				s->weaponTimer += step * s->values->fireSpeed;
+				if (s->weaponTimer > 1000.f)
+					s->weaponTimer = 0.f;
 				// impart damage
 				s->target->health -= step * s->values->damageModifiers[s->target->type];
 			}
