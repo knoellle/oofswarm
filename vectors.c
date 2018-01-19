@@ -82,7 +82,7 @@ inline float randomFloat()
 inline Vector2f randomBetween(Vector2f v1, Vector2f v2)
 {
 	Vector2f v;
-	v.x = v1.x + (v.x - v1.x) * randomFloat();
-	v.y = v1.y + (v.y - v1.y) * randomFloat();
+	v.x = v1.x + (v2.x - v1.x) * randomFloat();
+	v.y = v1.y + (v2.y - v1.y) * randomFloat();
 	return v;
 }
