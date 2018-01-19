@@ -132,7 +132,6 @@ Ship* spawnShip(Vector2f position, int type, int team)
 			printf("Couldn't increase array size, aborting spawn.\n");
 			return NULL;
 		}
-
 	}
 
 	// printf("%d\n", game.ships);
@@ -264,7 +263,7 @@ void tickGame(float step)
 		p->shipPresence[2] = 0;
 		for (int s = 0; s < game.numShips; s++)
 		{
-			if (game.ships[i].team != p->team) continue;
+			if (game.ships[s].team != p->team) continue;
 			float r = veclen(vecsub(game.ships[s].position, p->position));
 			if (r > 0.f)
 				p->shipPresence[game.ships[s].type] += min(1.f / r, 1.f); //r < p->radius * 4.f ? 1.f : 0.f;
