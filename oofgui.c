@@ -49,6 +49,8 @@ UIElement* addChild(UIElement* root)
 	elem->texture = NULL;
 	elem->onClick = NULL;
 	elem->visible = true;
+	elem->borderColor = vecf(0.f, 0.f, 0.f, 0.f);
+	elem->faceColor = vecf(0.f, 0.f, 0.f, 0.f);
 	return elem;
 }
 
