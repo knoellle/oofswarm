@@ -20,8 +20,8 @@ struct Tile
 	//      3 = power plant
 	//      4 = farm
 	//      5 = shipyard(fighter)
-	//      6 = shipyard(cruiser)
-	//      7 = shipyard(bomber)
+	//      6 = shipyard(bomber)
+	//      7 = shipyard(cruiser)
 	int   buildingType;
 	int   buildingLevel;
 };
@@ -69,10 +69,12 @@ struct Ship
 
 struct Wave
 {
-	int shipsToSpawn[3];
+	float shipsToSpawn[3]; // float to make it easily scalable, i.e. x * 1.1
 	float countdown;
 	Vectorf spawnAreaP1;
 	Vectorf spawnAreaP2;
+
+	int waveNumber;
 };
 
 struct Game
@@ -90,6 +92,7 @@ struct Game
 	int numShips;
 	int lenShips;
 
+	Wave nextWave;
 	Wave currentWave;
 
 	// ratio of height and width of the window
@@ -197,6 +200,7 @@ void buttonTileClick(UIElement* source)
 	UIElement* planetPopup = getElementByName(&game.gui, "planetPopup");
 
 	Planet* p = &game.planets[planetPopup->data];
+	p->team = 0;
 	p->tiles[source->data].buildingType = buildingSelector->data;
 	source->texture = &game.textures[buildingSelector->data];
 }
@@ -413,10 +417,12 @@ void newGame(int seed, float galaxyRadius, int planets)
 		}
 	}
 
-	game.currentWave.spawnAreaP1 = vecf(-galaxyRadius, galaxyRadius);
-	game.currentWave.spawnAreaP2 = vecf( galaxyRadius, galaxyRadius);
-	game.currentWave.shipsToSpawn[0] = 5;
-	game.currentWave.countdown = 3.f;
+	game.nextWave.spawnAreaP1 = vecf(-galaxyRadius/10.f, galaxyRadius);
+	game.nextWave.spawnAreaP2 = vecf( galaxyRadius/10.f, galaxyRadius);
+	game.nextWave.shipsToSpawn[0] = 15;
+	game.nextWave.shipsToSpawn[1] = 5;
+	game.nextWave.shipsToSpawn[2] = 1;
+	game.nextWave.countdown = 5.f;
 
 	spawnShip(vecf(25.f,-25.f),0,0);
 }
@@ -431,7 +437,8 @@ void tickGame(float step)
 	// advance timers and process production values
 	game.gameAge += step;
 
-	// "remove" dead ships
+	// "remove" dead ships(and count enemy ships)
+	int enemy_shipcount = 0;
 	for (int i = game.numShips; i >= 0; i--)
 	{
 		if (game.ships[i].health < 0.f)
@@ -446,6 +453,21 @@ void tickGame(float step)
 			game.ships[i] = game.ships[game.numShips - 1];
 			game.ships[i].target = NULL;
 			game.numShips--;
+		} else {
+			if (game.ships[i].team == 1)
+			{
+				enemy_shipcount++;
+			}
+		}
+	}
+
+	// advance wave
+	if (enemy_shipcount == 0 && game.currentWave.countdown < 0.f)
+	{
+		game.currentWave = game.nextWave;
+		for (int i = 0; i < 3; ++i)
+		{
+			game.nextWave.shipsToSpawn[i] *= 1.5;
 		}
 	}
 
@@ -455,7 +477,7 @@ void tickGame(float step)
 	{
 		for (int i = 0; i < 3; i++)
 		{
-			while (game.currentWave.shipsToSpawn[i] > 0)
+			if (game.currentWave.shipsToSpawn[i] > 0)
 			{
 				game.currentWave.shipsToSpawn[i] -= 1;
 				Ship* s = spawnShip(randomBetween(game.currentWave.spawnAreaP1, game.currentWave.spawnAreaP2), i, 1);
@@ -464,11 +486,53 @@ void tickGame(float step)
 		}
 	}
 
+	// tick planets
 	if ((int)game.gameAge != (int)(game.gameAge+step))
 	{
-		float a = (rand() % 360) / (180.f/3.41f);
-		Ship* s = spawnShip(vecf(cos(a)*game.planets[0].radius, sin(a)* game.planets[0].radius), 0, 0);
-		s->velocity = normalize(vecsub(s->position, game.planets[0].position));
+		printf("tick! %d %d %f\n", (int)game.gameAge, (int)(game.gameAge+step), game.gameAge+step);
+		for (int i = 0; i < game.numPlanets; i++)
+		{
+			for (int j = 0; j < game.planets[i].numTiles; j++)
+			{
+				switch (game.planets[i].tiles[j].buildingType)
+				{
+					case 0: // ignore, empty tile
+						break;
+					case 1: // HQ, todo: add special effects
+						break;
+					case 2: // mine, todo: add sbm production
+						break;
+					case 3: // power plant, todo: add energy production
+						break;
+					case 4: // farm, todo: add food production
+						break;
+					case 5: // shipyard(fighter), produces 1 ship every 5 seconds
+						if (((int)game.gameAge) % 2 == 0 && game.planets[i].shipPresence[0] < game.planets[i].radius)
+						{
+							float a = (rand() % 360) / (180.f/3.41f);
+							Ship* s = spawnShip(vecadd(vecf(cos(a)*game.planets[i].radius, sin(a)* game.planets[i].radius), game.planets[i].position), 0, 0);
+							s->velocity = normalize(vecsub(s->position, game.planets[i].position));
+						}
+						break;
+					case 6: // shipyard(bomber), produces 1 ship every 15 seconds
+						if (((int)game.gameAge) % 10 == 0 && game.planets[i].shipPresence[1] < game.planets[i].radius)
+						{
+							float a = (rand() % 360) / (180.f/3.41f);
+							Ship* s = spawnShip(vecadd(vecf(cos(a)*game.planets[i].radius, sin(a)* game.planets[i].radius), game.planets[i].position), 1, 0);
+							s->velocity = normalize(vecsub(s->position, game.planets[i].position));
+						}
+						break;
+					case 7: // shipyard(cruiser), produces 1 ship every 60 seconds
+						if (((int)game.gameAge) % 30 == 0 && game.planets[i].shipPresence[2] < game.planets[i].radius)
+						{
+							float a = (rand() % 360) / (180.f/3.41f);
+							Ship* s = spawnShip(vecadd(vecf(cos(a)*game.planets[i].radius, sin(a)* game.planets[i].radius), game.planets[i].position), 2, 0);
+							s->velocity = normalize(vecsub(s->position, game.planets[i].position));
+						}
+						break;
+				}
+			}
+		}
 	}
 
 	// accumulate ship presence
@@ -530,7 +594,6 @@ void tickGame(float step)
 			}
 			planetAttraction = normalize(vecsub(bestPlanet.position, s->position));
 
-			Vectorf boid = vecf(0.f, 0.f);
 			Vectorf positionSum = vecf(0.f, 0.f);
 			int numPeers;
 			for (int j = 0; j < game.numShips; j++)
@@ -558,7 +621,7 @@ void tickGame(float step)
 				// alignment
 				if (r < 2.f)
 				{
-					force = vecadd(force, vecscale(normalize(vecsub(game.ships[j].velocity, s->velocity)), 2.f));
+					force = vecadd(force, vecscale(normalize(vecsub(game.ships[j].velocity, s->velocity)), 10.f));
 				}
 
 				// cohesion pt. 1
@@ -570,7 +633,7 @@ void tickGame(float step)
 			}
 			// cohesion pt. 2
 			if (numPeers > 0)
-				force = vecadd(force, normalize(vecsub(vecscale(positionSum, 1.f/numPeers), s->position)));
+				force = vecadd(force, vecscale(normalize(vecsub(vecscale(positionSum, 1.f/numPeers), s->position)), 0.5f));
 
 			force = vecadd(force, vecscale(normalize(planetAttraction), 3.f));
 		} else { // target mode
@@ -594,11 +657,11 @@ void tickGame(float step)
 			force = vecadd(force, normalize(relpos));
 		}
 
-		s->force = force;
-		s->velocity = normalize(vecadd(s->velocity, vecscale(force, step * 0.5f)));
-		s->position = vecadd(s->position, vecscale(s->velocity, step * 5.f));
+		s->force = force; // copy for debugging during the render cycle
+		s->velocity = normalize(vecadd(s->velocity, vecscale(force, step * s->values->acceleration)));
+		// normalize velocity and adjust it as per type
+		s->position = vecadd(s->position, vecscale(s->velocity, step * s->values->speed));
 	}
-	// normalize velocity and adjust it as per type
 }
 
 void loadAssets()
@@ -608,9 +671,9 @@ void loadAssets()
 
 	game.textures[0] = loadTexture("assets" PATH_SEPARATOR "empty.png", "empy");
 	game.textures[1] = loadTexture("assets" PATH_SEPARATOR "hq.png", "headquarter");
-	game.textures[2] = loadTexture("assets" PATH_SEPARATOR "plant.png", "powerplant");
-	game.textures[3] = loadTexture("assets" PATH_SEPARATOR "farm.png", "farm");
-	game.textures[4] = loadTexture("assets" PATH_SEPARATOR "mine.png", "mine");
+	game.textures[2] = loadTexture("assets" PATH_SEPARATOR "mine.png", "mine");
+	game.textures[3] = loadTexture("assets" PATH_SEPARATOR "plant.png", "powerplant");
+	game.textures[4] = loadTexture("assets" PATH_SEPARATOR "farm.png", "farm");
 	game.textures[5] = loadTexture("assets" PATH_SEPARATOR "Shipyard1.png", "headquarter");
 	game.textures[6] = loadTexture("assets" PATH_SEPARATOR "Shipyard2.png", "powerplant");
 	game.textures[7] = loadTexture("assets" PATH_SEPARATOR "Shipyard3.png", "farm");
@@ -670,9 +733,9 @@ void renderGame()
 		Ship* s = &game.ships[i];
 		if (s->team == 0)
 		{
-			glColor3f(0.f, 0.f, 1.f);
+			glColor3f(0.f, 0.f, 1.f * (s->health/s->values->baseHealth));
 		} else {
-			glColor3f(1.f, 0.f, 0.f);
+			glColor3f(1.f * (s->health/s->values->baseHealth), 0.f, 0.f);
 		}
 		glPushMatrix();
 			glTranslatef(s->position.x, s->position.y, 0);
@@ -684,17 +747,19 @@ void renderGame()
 					glEnd();
 					break;
 				case 1:
-					glBegin( GL_POLYGON );
-						for (int a = 0; a < 360; a+=36)
-							glVertex2f(cos(a / (180.f/3.41f)), sin(a / (180.f/3.41f)));
-					glEnd();
-				case 2:
 					glBegin( GL_QUADS );
 						glVertex2f(-0.2f, -0.2f);
 						glVertex2f( 0.2f, -0.2f);
 						glVertex2f( 0.2f,  0.2f);
 						glVertex2f(-0.2f,  0.2f);
 					glEnd();
+					break;
+				case 2:
+					glBegin( GL_POLYGON );
+						for (int a = 0; a < 360; a+=36)
+							glVertex2f(cos(a / (180.f/3.41f)), sin(a / (180.f/3.41f)));
+					glEnd();
+					break;
 			}
 
 			glBegin( GL_LINES );
