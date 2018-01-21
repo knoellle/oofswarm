@@ -4,6 +4,7 @@
 #include <SDL2/SDL_opengl.h>
 #include <GL/glu.h>
 #include <sys/time.h>
+#include <stdint.h>
 
 #include <fenv.h>
 #include "game.c"
@@ -24,9 +25,6 @@ SDL_Window* gWindow = NULL;
 SDL_GLContext gContext;
 
 unsigned lastTick;
-
-int window_width;
-int window_height;
 
 bool initGL()
 {
@@ -113,20 +111,17 @@ bool initLibs(int SCREEN_WIDTH, int SCREEN_HEIGHT)
 					printf( "Unable to initialize OpenGL!\n" );
 					success = false;
 				}
+
+				if (!IMG_Init(IMG_INIT_PNG))
+				{
+					printf("Unable to initialize SDL_Image\n");
+					success = false;
+				}
 			}
 		}
 	}
 
 	return success;
-}
-
-void resizeWindow(SDL_Event event)
-{
-	window_width = event.window.data1;
-	window_height = event.window.data2;
-	game.aspectRatio = (float) window_width / window_height;
-	glViewport(0, 0, window_width, window_height);
-	printf("Window resized %d %d\n", window_width, window_height);
 }
 
 void close()
@@ -137,47 +132,13 @@ void close()
 	SDL_Quit();
 }
 
-void handleKeys( unsigned char key, int x, int y )
-{
-	if (key == SDL_SCANCODE_KP_PLUS)
-	{
-		game.speedModifier *= 2.f;
-	}
-	if (key == SDL_SCANCODE_KP_MINUS)
-	{
-		game.speedModifier /= 2.f;
-	}
-	if (key == SDL_SCANCODE_S)
-	{
-		game.currentWave.shipsToSpawn[0] = 50;
-	}
-	if (key == SDL_SCANCODE_D)
-	{
-		// for (int i = 0; i < game.numShips; ++i)
-		// {
-		// 	if (game.ships[i].target != NULL)
-		// 	{
-		// 		printf("p%d h%f l%f %f\n", game.ships[i].target, game.ships[i].target->health,
-		// 			game.ships[i].target->position.x, game.ships[i].target->position.y);
-		// 	}
-		// }
-		for (int i = 0; i < game.numPlanets; ++i)
-		{
-			printf("%d %f %f %f\n", game.planets[i].team, game.planets[i].shipPresence[0], game.planets[i].shipPresence[1], game.planets[i].shipPresence[2]);
-		}
-	}
-	if (key == SDL_SCANCODE_SPACE)
-	{
-		game.speedModifier *= -1.f;
-	}
-}
-
 int main(int argc, char const *argv[])
 {
+	// make sure to catch sources of NAN and INF
 	feenableexcept(FE_INVALID | FE_OVERFLOW);
-	window_width = 640;
-	window_height = 420;
-	if (!initLibs(window_width, window_height))
+	game.window_width = 640;
+	game.window_height = 420;
+	if (!initLibs(game.window_width, game.window_height))
 	{
 		close();
 		return 1;
@@ -209,6 +170,10 @@ int main(int argc, char const *argv[])
 		// }
 
 		newGame(0, 500, 50);
+		loadAssets();
+		createUI();
+		game.window_width = 640;
+		game.window_height = 420;
 		game.aspectRatio = 640.f / 420.f;
 		game.debuglevel = 0;
 
@@ -249,6 +214,12 @@ int main(int argc, char const *argv[])
 					{
 						game.cameraZoom /= 1.1f;
 					}
+				} else if (e.type == SDL_MOUSEBUTTONDOWN)
+				{
+					if (e.button.button == SDL_BUTTON_LEFT || e.button.button == SDL_BUTTON_RIGHT)
+					{
+						handleMouseButtons(e.button.button, e.button.x, e.button.y);
+					}
 				}
 			}
 
@@ -261,8 +232,6 @@ int main(int argc, char const *argv[])
 			}
 
 			tickGame(step);
-
-			glViewport(0,0,window_width,window_height);
 
 			//Render quad
 			renderGame();

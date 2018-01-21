@@ -1,4 +1,4 @@
-CFLAGS = -lSDL2 -lGLU -lGL
+CFLAGS = -lSDL2 -lSDL2_image -lGLU -lGL
 
 .PHONY: oofswarm
 oofswarm: main.c

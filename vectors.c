@@ -1,67 +1,79 @@
 #include <math.h>
 #include <stdlib.h>
 
-struct Vector2f
+struct Vectorf
 {
 	float x;
 	float y;
+	float z;
+	float w;
 };
 
-Vector2f vec2f(float x, float y)
+Vectorf vecf(float x, float y, float z = 0.f, float w = 0.f)
 {
-	Vector2f v;
+	Vectorf v;
 	v.x = x;
 	v.y = y;
+	v.z = z;
+	v.w = w;
 	return v;
 }
 
 // lengths
 
-inline float veclen(Vector2f v)
+inline float veclen(Vectorf v)
 {
-	return sqrt(v.x * v.x + v.y * v.y);
+	return sqrt(v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w);
 }
 
-inline float veclensqr(Vector2f v)
+inline float veclensqr(Vectorf v)
 {
-	return (v.x * v.x + v.y * v.y);
+	return (v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w);
 }
 
 // arithmetic functions
 
-inline Vector2f vecmult(Vector2f v1, Vector2f v2)
+inline Vectorf vecmult(Vectorf v1, Vectorf v2)
 {
-	Vector2f v;
+	Vectorf v;
 	v.x = v1.x * v2.x;
 	v.y = v1.y * v2.y;
+	v.z = v1.z * v2.z;
+	v.w = v1.w * v2.w;
 	return v;
 }
 
-inline Vector2f vecadd(Vector2f v1, Vector2f v2)
+inline Vectorf vecadd(Vectorf v1, Vectorf v2)
 {
-	Vector2f v;
+	Vectorf v;
 	v.x = v1.x + v2.x;
 	v.y = v1.y + v2.y;
+	v.z = v1.z + v2.z;
+	v.w = v1.w + v2.w;
 	return v;
 }
 
-inline Vector2f vecsub(Vector2f v1, Vector2f v2)
+inline Vectorf vecsub(Vectorf v1, Vectorf v2)
 {
-	Vector2f v;
+	Vectorf v;
 	v.x = v1.x - v2.x;
 	v.y = v1.y - v2.y;
+	v.z = v1.z - v2.z;
+	v.w = v1.w - v2.w;
 	return v;
 } 
 
-inline Vector2f vecscale(Vector2f v1, float f)
+inline Vectorf vecscale(Vectorf v1, float f)
 {
-	Vector2f v;
+	Vectorf v;
 	v.x = v1.x * f;
 	v.y = v1.y * f;
+	v.z = v1.z * f;
+	v.w = v1.w * f;
 	return v;
 }
 
-inline Vector2f normalize(Vector2f v1)
+inline Vectorf normalize(Vectorf v1)
 {
 	float f = veclen(v1);
 	if (f == 0.f)
@@ -79,10 +91,12 @@ inline float randomFloat()
 	return (float)rand()/(float)(RAND_MAX);
 }
 
-inline Vector2f randomBetween(Vector2f v1, Vector2f v2)
+inline Vectorf randomBetween(Vectorf v1, Vectorf v2)
 {
-	Vector2f v;
+	Vectorf v;
 	v.x = v1.x + (v2.x - v1.x) * randomFloat();
 	v.y = v1.y + (v2.y - v1.y) * randomFloat();
+	v.z = v1.z + (v2.z - v1.z) * randomFloat();
+	v.w = v1.w + (v2.w - v1.w) * randomFloat();
 	return v;
 }
