@@ -155,21 +155,47 @@ int main(int argc, char const *argv[])
 
 		// define ship classes
 		ShipClass fighter;
-		fighter.acceleration = 2.f;
-		fighter.speed = 2.f;
-		fighter.damageModifiers[0] = 50;
-		fighter.sensorRange = 50.f;
+		fighter.acceleration = 0.5f;
+		fighter.speed = 5.f;
+		fighter.damageModifiers[0] = 50.f;
+		fighter.damageModifiers[1] = 100.f;
+		fighter.damageModifiers[2] = 5.f;
+		fighter.sensorRange = 15.f;
 		fighter.weaponRange = 7.5f;
 		fighter.fireSpeed = 10.f;
 		fighter.baseHealth = 100.f;
 		game.shipClasses[0] = fighter;
+
+		ShipClass bomber;
+		bomber.acceleration = 0.1f;
+		bomber.speed = 3.f;
+		bomber.damageModifiers[0] = 5.f;
+		bomber.damageModifiers[1] = 50.f;
+		bomber.damageModifiers[2] = 100.f;
+		bomber.sensorRange = 30.f;
+		bomber.weaponRange = 7.5f;
+		bomber.fireSpeed = 1.f;
+		bomber.baseHealth = 100.f;
+		game.shipClasses[1] = bomber;
+
+		ShipClass cruiser;
+		cruiser.acceleration = 0.2f;
+		cruiser.speed = 2.f;
+		cruiser.damageModifiers[0] = 100.f;
+		cruiser.damageModifiers[1] = 100.f;
+		cruiser.damageModifiers[2] = 25.f;
+		cruiser.sensorRange = 50.f;
+		cruiser.weaponRange = 7.5f;
+		cruiser.fireSpeed = 0.5f;
+		cruiser.baseHealth = 1000.f;
+		game.shipClasses[2] = cruiser;
 
 		// for (int i = 0; i < 10; ++i)
 		// {
 		// 	printf("%f\n", randomFloat());
 		// }
 
-		newGame(0, 500, 50);
+		newGame(0, 250, 15);
 		loadAssets();
 		createUI();
 		game.window_width = 640;
