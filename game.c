@@ -298,6 +298,8 @@ void handleKeys( unsigned char key, int x, int y )
 	if (key == SDL_SCANCODE_S)
 	{
 		game.currentWave.shipsToSpawn[0] = 50;
+		game.currentWave.shipsToSpawn[1] = 50;
+		game.currentWave.shipsToSpawn[2] = 50;
 	}
 	if (key == SDL_SCANCODE_D)
 	{
@@ -317,6 +319,11 @@ void handleKeys( unsigned char key, int x, int y )
 	if (key == SDL_SCANCODE_SPACE)
 	{
 		game.speedModifier *= -1.f;
+	}
+	if (key == SDL_SCANCODE_ESCAPE)
+	{
+		UIElement* planetPopup = getElementByName(&game.gui, "planetPopup");
+		planetPopup->visible = false;
 	}
 }
 
@@ -669,9 +676,27 @@ void renderGame()
 		}
 		glPushMatrix();
 			glTranslatef(s->position.x, s->position.y, 0);
-			glBegin( GL_POINTS );
-				glVertex2f(0, 0);
-			glEnd();
+			switch (s->type)
+			{
+				case 0:
+					glBegin( GL_POINTS );
+						glVertex2f(0, 0);
+					glEnd();
+					break;
+				case 1:
+					glBegin( GL_POLYGON );
+						for (int a = 0; a < 360; a+=36)
+							glVertex2f(cos(a / (180.f/3.41f)), sin(a / (180.f/3.41f)));
+					glEnd();
+				case 2:
+					glBegin( GL_QUADS );
+						glVertex2f(-0.2f, -0.2f);
+						glVertex2f( 0.2f, -0.2f);
+						glVertex2f( 0.2f,  0.2f);
+						glVertex2f(-0.2f,  0.2f);
+					glEnd();
+			}
+
 			glBegin( GL_LINES );
 				if (game.debuglevel >= 1)
 				{
