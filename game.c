@@ -53,6 +53,7 @@ struct ShipClass
 	float weaponRange;
 	float fireSpeed;
 	float baseHealth;
+	float energyUsage;
 };
 
 struct Ship
@@ -507,19 +508,19 @@ void tickGame(float step)
 				{
 					case 0: // ignore, empty tile
 						break;
-					case 1: // HQ, todo: add special effects
-						game.resources[rsc_energy] += 1 * step;
-						game.resources[rsc_sbm] += 1 * step;
-						game.resources[rsc_food] += 1 * step;
+					case 1: // HQ
+						resource_delta.x += 5;
+						resource_delta.y += 5;
+						resource_delta.z += 5;
 						break;
-					case 2: // mine, todo: add sbm production
-						game.resources[rsc_sbm] += 3 * step;
+					case 2: // mine
+						resource_delta.x += 3;
 						break;
-					case 3: // power plant, todo: add energy production
-						game.resources[rsc_energy] += 3 * step;
+					case 3: // power plant
+						resource_delta.y += 3;
 						break;
-					case 4: // farm, todo: add food production
-						game.resources[rsc_food] += 3 * step;
+					case 4: // farm
+						resource_delta.z += 3;
 						break;
 					case 5: // shipyard(fighter), produces 1 ship every 5 seconds
 						if (((int)game.gameAge) % 2 == 0 && game.planets[i].shipPresence[0] < game.planets[i].radius)
@@ -561,6 +562,11 @@ void tickGame(float step)
 	for (int i = 0; i < game.numPlanets; i++)
 	{
 		Planet* p = &(game.planets[i]);
+		if (p->team == 0)
+		{
+			printf("%f\n", sqrt(p->radius));
+			resource_delta.z -= sqrt(p->radius); // subtract some food
+		}
 		p->shipPresence[0] = 0;
 		p->shipPresence[1] = 0;
 		p->shipPresence[2] = 0;
@@ -580,6 +586,8 @@ void tickGame(float step)
 	for (int i = 0; i < game.numShips; i++)
 	{
 		Ship* s = &game.ships[i];
+		if (s->team == 0)
+			resource_delta.x -= s->values->energyUsage; // subtract some energy
 		Vectorf force;
 		force = vecf(0.f, 0.f);
 		if (s->target == NULL) // cruise mode
@@ -680,6 +688,14 @@ void tickGame(float step)
 		// normalize velocity and adjust it as per type
 		s->position = vecadd(s->position, vecscale(s->velocity, step * s->values->speed));
 	}
+
+	Vectorf resource_delta_scaled = vecscale(resource_delta, step); // make sure to advance the counters only by a fraction based on the time passeds
+
+	game.resources[rsc_energy] += resource_delta_scaled.x;
+	game.resources[rsc_sbm] += resource_delta_scaled.y;
+	game.resources[rsc_food] += resource_delta_scaled.z;
+
+	printf("Resources: %f %f %f, delta %f %f %f\n", game.resources[0], game.resources[1], game.resources[2], resource_delta.x, resource_delta.y, resource_delta.z);
 }
 
 void loadAssets()

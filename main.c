@@ -164,6 +164,7 @@ int main(int argc, char const *argv[])
 		fighter.weaponRange = 7.5f;
 		fighter.fireSpeed = 10.f;
 		fighter.baseHealth = 100.f;
+		fighter.energyUsage = 0.01f;
 		game.shipClasses[0] = fighter;
 
 		ShipClass bomber;
@@ -176,6 +177,7 @@ int main(int argc, char const *argv[])
 		bomber.weaponRange = 7.5f;
 		bomber.fireSpeed = 1.f;
 		bomber.baseHealth = 100.f;
+		bomber.energyUsage = 0.02f;
 		game.shipClasses[1] = bomber;
 
 		ShipClass cruiser;
@@ -188,6 +190,7 @@ int main(int argc, char const *argv[])
 		cruiser.weaponRange = 7.5f;
 		cruiser.fireSpeed = 0.5f;
 		cruiser.baseHealth = 1000.f;
+		cruiser.energyUsage = 0.5f;
 		game.shipClasses[2] = cruiser;
 
 		// for (int i = 0; i < 10; ++i)
