@@ -9,6 +9,8 @@
 #include "textures.c"
 #include "oofgui.c"
 
+#define PI 3.14159265358979323846
+
 #define min(a,b) (((a)<(b))?(a):(b))
 #define max(a,b) (((a)>(b))?(a):(b))
 
@@ -94,6 +96,8 @@ struct Game
 
 	Wave nextWave;
 	Wave currentWave;
+
+	float resources[3];
 
 	// ratio of height and width of the window
 	float aspectRatio;
@@ -404,9 +408,10 @@ void newGame(int seed, float galaxyRadius, int planets)
 		// positioning
 		planet->position = vecscale(vecf(cos(a), sin(a)), sqrt(r / game.galaxyRadius) * game.galaxyRadius);
 		r = r + game.galaxyRadius / game.numPlanets;
-		a = a + planet->seed;
+		a = a + PI * (1 + r/game.galaxyRadius/game.numPlanets*2); // 2 arm spiral galaxy
+		printf("Planet seed: %d\n", planet->seed);
 		// size
-		planet->radius = (float) 5 + (rand() % 5);
+		planet->radius = (float) 5 + (rand() % 15);
 		planet->numTiles = round(planet->radius);
 		planet->tiles = (Tile*) malloc(sizeof(Tile) * planet->numTiles);
 		for (int t = 0; t < planet->numTiles; t++)
@@ -712,7 +717,7 @@ void renderGame()
 	glColor3f(1.f, 1.f, 1.f);
 	for (int i = 0; i < game.numPlanets; i++)
 	{
-		float r = game.planets[i].radius;
+		float r = game.planets[i].radius/2;
 
 		// Todo: set color to white and use pixelshader instead
 		glColor3f(game.planets[i].team/3.f, game.planets[i].shipPresence[0]/100.f, game.planets[i].shipPresence[2]);
