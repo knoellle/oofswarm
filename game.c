@@ -14,6 +14,10 @@
 #define min(a,b) (((a)<(b))?(a):(b))
 #define max(a,b) (((a)>(b))?(a):(b))
 
+#define rsc_energy 0
+#define rsc_sbm 1
+#define rsc_food 2
+
 struct Tile
 {
 	// type 0 = none
@@ -439,8 +443,6 @@ void tickGame(float step)
 		return;
 	}
 	step *= game.speedModifier;
-	// advance timers and process production values
-	game.gameAge += step;
 
 	// "remove" dead ships(and count enemy ships)
 	int enemy_shipcount = 0;
@@ -491,6 +493,8 @@ void tickGame(float step)
 		}
 	}
 
+	Vectorf resource_delta = vecf(0, 0, 0);
+
 	// tick planets
 	if ((int)game.gameAge != (int)(game.gameAge+step))
 	{
@@ -504,12 +508,18 @@ void tickGame(float step)
 					case 0: // ignore, empty tile
 						break;
 					case 1: // HQ, todo: add special effects
+						game.resources[rsc_energy] += 1 * step;
+						game.resources[rsc_sbm] += 1 * step;
+						game.resources[rsc_food] += 1 * step;
 						break;
 					case 2: // mine, todo: add sbm production
+						game.resources[rsc_sbm] += 3 * step;
 						break;
 					case 3: // power plant, todo: add energy production
+						game.resources[rsc_energy] += 3 * step;
 						break;
 					case 4: // farm, todo: add food production
+						game.resources[rsc_food] += 3 * step;
 						break;
 					case 5: // shipyard(fighter), produces 1 ship every 5 seconds
 						if (((int)game.gameAge) % 2 == 0 && game.planets[i].shipPresence[0] < game.planets[i].radius)
@@ -539,6 +549,9 @@ void tickGame(float step)
 			}
 		}
 	}
+
+	// advance timers and process production values
+	game.gameAge += step;
 
 	// accumulate ship presence
 	float presenceSum[3];
@@ -626,7 +639,7 @@ void tickGame(float step)
 				// alignment
 				if (r < 2.f)
 				{
-					force = vecadd(force, vecscale(normalize(vecsub(game.ships[j].velocity, s->velocity)), 10.f));
+					force = vecadd(force, vecscale(normalize(vecsub(game.ships[j].velocity, s->velocity)), 2.f));
 				}
 
 				// cohesion pt. 1

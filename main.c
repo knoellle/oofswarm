@@ -195,7 +195,7 @@ int main(int argc, char const *argv[])
 		// 	printf("%f\n", randomFloat());
 		// }
 
-		newGame(0, 250, 15);
+		newGame(GetTickCount(), 250, 15);
 		loadAssets();
 		createUI();
 		game.window_width = 640;
