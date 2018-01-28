@@ -124,6 +124,7 @@ struct Game
 
 	float speedModifier;
 	float leftoverStep;
+	bool steplimiting;
 };
 
 Game game;
@@ -132,6 +133,7 @@ void clearGame()
 {
 	game.speedModifier = 1.f;
 	game.leftoverStep = 0.0f;
+	game.steplimiting = true;
 	game.seed = 0;
 	game.galaxyRadius = 0;
 	game.cameraShift = vecf(0.f, 0.f);
@@ -341,6 +343,10 @@ void handleKeys( unsigned char key, int x, int y )
 	{
 		UIElement* planetPopup = getElementByName(&game.gui, "planetPopup");
 		planetPopup->visible = false;
+	}
+	if (key == SDL_SCANCODE_F5)
+	{
+		game.steplimiting = !game.steplimiting;
 	}
 }
 

@@ -260,7 +260,7 @@ int main(int argc, char const *argv[])
 				step = 0.1f;
 			}
 
-			tickGame(step, true);
+			tickGame(step, game.steplimiting);
 
 			//Render quad
 			renderGame();
