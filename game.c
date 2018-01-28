@@ -565,7 +565,7 @@ void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) /
 					{
 						float a = (rand() % 360) / (180.f/3.41f);
 						Ship* s = spawnShip(vecadd(vecf(cos(a)*game.planets[i].radius, sin(a)* game.planets[i].radius), game.planets[i].position), 0, 0);
-						s->velocity = normalize(vecsub(s->position, game.planets[i].position));
+						s->velocity = normalize(vecadd(vecsub(s->position, game.planets[i].position), randomBetween(vecf(-0.1f, -0.1f), vecf(0.1f, 0.1f))));
 					}
 					break;
 				case 6: // shipyard(bomber), produces 1 ship every 15 seconds
@@ -573,7 +573,7 @@ void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) /
 					{
 						float a = (rand() % 360) / (180.f/3.41f);
 						Ship* s = spawnShip(vecadd(vecf(cos(a)*game.planets[i].radius, sin(a)* game.planets[i].radius), game.planets[i].position), 1, 0);
-						s->velocity = normalize(vecsub(s->position, game.planets[i].position));
+						s->velocity = normalize(vecadd(vecsub(s->position, game.planets[i].position), randomBetween(vecf(-0.1f, -0.1f), vecf(0.1f, 0.1f))));
 					}
 					break;
 				case 7: // shipyard(cruiser), produces 1 ship every 60 seconds
@@ -581,7 +581,7 @@ void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) /
 					{
 						float a = (rand() % 360) / (180.f/3.41f);
 						Ship* s = spawnShip(vecadd(vecf(cos(a)*game.planets[i].radius, sin(a)* game.planets[i].radius), game.planets[i].position), 2, 0);
-						s->velocity = normalize(vecsub(s->position, game.planets[i].position));
+						s->velocity = normalize(vecadd(vecsub(s->position, game.planets[i].position), randomBetween(vecf(-0.1f, -0.1f), vecf(0.1f, 0.1f))));
 					}
 					break;
 			}
