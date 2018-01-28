@@ -121,7 +121,9 @@ struct Game
 	// 1: visual indicators
 	// 2: console outputs
 	int debuglevel;
+
 	float speedModifier;
+	float leftoverStep;
 };
 
 Game game;
@@ -129,6 +131,7 @@ Game game;
 void clearGame()
 {
 	game.speedModifier = 1.f;
+	game.leftoverStep = 0.0f;
 	game.seed = 0;
 	game.galaxyRadius = 0;
 	game.cameraShift = vecf(0.f, 0.f);
@@ -444,13 +447,30 @@ void newGame(int seed, float galaxyRadius, int planets)
 	spawnShip(vecf(25.f,-25.f),0,0);
 }
 
-void tickGame(float step)
+void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) // 1/0.016 = 60 fps
 {
 	if (game.speedModifier <= 0.f)
 	{
 		return;
 	}
 	step *= game.speedModifier;
+
+	if (fixedStepSize)
+	{
+		step += game.leftoverStep;
+		if (step/stepsize > 5.f) // don't do more than 5 steps per frame
+		{
+			printf("Overstepping! Dropping some steps!\n");
+			step = stepsize * 5.f;
+		}
+		while (step >= stepsize)
+		{
+			tickGame(stepsize);
+			step -= stepsize;
+		}
+		game.leftoverStep = step;
+		return;
+	}
 
 	// "remove" dead ships(and count enemy ships)
 	int enemy_shipcount = 0;
