@@ -518,20 +518,18 @@ void tickGame(float step)
 				case 0: // ignore, empty tile
 					break;
 				case 1: // HQ
-					resource_delta.x += 3;
-					resource_delta.y += 3;
-					resource_delta.z += 3;
+					resource_delta.x += 5;
+					resource_delta.y += 5;
+					resource_delta.z += 5;
 					break;
 				case 2: // mine
-					resource_delta.y += 3;
-					resource_delta.x -= 2;
+					resource_delta.x += 3;
 					break;
 				case 3: // power plant
-					resource_delta.x += 3;
+					resource_delta.y += 3;
 					break;
 				case 4: // farm
 					resource_delta.z += 3;
-					resource_delta.x -= 1;
 					break;
 				case 5: // shipyard(fighter), produces 1 ship every 5 seconds
 					if (tick && ((int)game.gameAge) % 2 == 0 && game.planets[i].shipPresence[0] < game.planets[i].radius)
