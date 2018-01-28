@@ -734,7 +734,7 @@ void loadAssets()
 	game.numTextures = 8;
 	game.textures = (Texture*) malloc(game.numTextures * sizeof(Texture));
 
-	game.textures[0] = loadTexture("assets" PATH_SEPARATOR "empty.png", "empy");
+	game.textures[0] = loadTexture("assets" PATH_SEPARATOR "empty.png", "empty");
 	game.textures[1] = loadTexture("assets" PATH_SEPARATOR "hq.png", "headquarter");
 	game.textures[2] = loadTexture("assets" PATH_SEPARATOR "mine.png", "mine");
 	game.textures[3] = loadTexture("assets" PATH_SEPARATOR "plant.png", "powerplant");
