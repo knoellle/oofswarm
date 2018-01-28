@@ -220,6 +220,7 @@ void createUI()
 	game.gui.position = vecf(0.f, 0.f);
 	game.gui.size = vecf(1.f, 1.f);
 	game.gui.visible = true;
+	game.gui.enabled = true;
 
 	UIElement* squareCenter = addChild(&game.gui);
 	strcpy(squareCenter->name, "squareCenter");
@@ -348,7 +349,7 @@ void handleMouseButtons(uint8_t button, int32_t x, int32_t y)
 	UIElement* elem = getElementAt(&game.gui, fx, fy);
 	if (elem)
 	{
-		if (elem->onClick)
+		if (elem->onClick && elem->enabled)
 		{
 			elem->onClick(elem);
 			return;

@@ -23,6 +23,7 @@ struct UIElement
 	Texture* texture;
 
 	bool visible;
+	bool enabled;
 };
 
 UIElement* addChild(UIElement* root)
@@ -51,6 +52,7 @@ UIElement* addChild(UIElement* root)
 	elem->visible = true;
 	elem->borderColor = vecf(0.f, 0.f, 0.f, 0.f);
 	elem->faceColor = vecf(0.f, 0.f, 0.f, 0.f);
+	elem->enabled = true;
 	return elem;
 }
 
