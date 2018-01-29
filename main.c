@@ -165,6 +165,7 @@ int main(int argc, char const *argv[])
 		fighter.fireSpeed = 10.f;
 		fighter.baseHealth = 100.f;
 		fighter.energyUsage = 0.01f;
+		fighter.buildCost = 0.2f;
 		game.shipClasses[0] = fighter;
 
 		ShipClass bomber;
@@ -178,6 +179,7 @@ int main(int argc, char const *argv[])
 		bomber.fireSpeed = 1.f;
 		bomber.baseHealth = 100.f;
 		bomber.energyUsage = 0.02f;
+		bomber.buildCost = 1.f;
 		game.shipClasses[1] = bomber;
 
 		ShipClass cruiser;
@@ -191,7 +193,17 @@ int main(int argc, char const *argv[])
 		cruiser.fireSpeed = 0.5f;
 		cruiser.baseHealth = 1000.f;
 		cruiser.energyUsage = 0.5f;
+		cruiser.buildCost = 5.f;
 		game.shipClasses[2] = cruiser;
+
+		game.buildingPrices[0] = 0;
+		game.buildingPrices[1] = 0;
+		game.buildingPrices[2] = 100;
+		game.buildingPrices[3] = 100;
+		game.buildingPrices[4] = 100;
+		game.buildingPrices[5] = 250;
+		game.buildingPrices[6] = 500;
+		game.buildingPrices[7] = 1000;
 
 		newGame(GetTickCount(), 250, 15);
 		loadAssets();

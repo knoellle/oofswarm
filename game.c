@@ -54,6 +54,7 @@ struct ShipClass
 	float fireSpeed;
 	float baseHealth;
 	float energyUsage;
+	float buildCost;
 };
 
 struct Ship
@@ -94,6 +95,7 @@ struct Game
 	int numPlanets;
 
 	ShipClass shipClasses[3];
+	int buildingPrices[8];
 
 	Ship *ships;
 	int numShips;
@@ -213,10 +215,14 @@ void buttonTileClick(UIElement* source)
 	UIElement* buildingSelector = getElementByName(&game.gui, "buildingSelector");
 	UIElement* planetPopup = getElementByName(&game.gui, "planetPopup");
 
-	Planet* p = &game.planets[planetPopup->data];
-	p->team = 0;
-	p->tiles[source->data].buildingType = buildingSelector->data;
-	source->texture = &game.textures[buildingSelector->data];
+	if (game.resources[rsc_sbm] >= game.buildingPrices[buildingSelector->data])
+	{
+		game.resources[rsc_sbm] -= game.buildingPrices[buildingSelector->data];
+		Planet* p = &game.planets[planetPopup->data];
+		p->team = 0;
+		p->tiles[source->data].buildingType = buildingSelector->data;
+		source->texture = &game.textures[buildingSelector->data];
+	}
 }
 
 void createUI()
@@ -358,9 +364,12 @@ void handleMouseButtons(uint8_t button, int32_t x, int32_t y)
 	UIElement* elem = getElementAt(&game.gui, fx, fy);
 	if (elem)
 	{
-		if (elem->onClick && elem->enabled)
+		if (elem->onClick)
 		{
-			elem->onClick(elem);
+			if (elem->enabled)
+			{
+				elem->onClick(elem);
+			}
 			return;
 		}
 	}
@@ -550,6 +559,9 @@ void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) /
 					resource_delta.z += 3;
 					break;
 				case 2: // mine
+					// deactivate building if there's not enough energy and its not producing energy
+					if (game.resources[rsc_energy] <= 0)
+							continue;
 					resource_delta.y += 3;
 					resource_delta.x -= 2;
 					break;
@@ -557,28 +569,49 @@ void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) /
 					resource_delta.x += 3;
 					break;
 				case 4: // farm
+					// deactivate building if there's not enough energy and its not producing energy
+					if (game.resources[rsc_energy] <= 0)
+							continue;
 					resource_delta.z += 3;
 					resource_delta.x -= 1;
 					break;
 				case 5: // shipyard(fighter), produces 1 ship every 5 seconds
+					// deactivate building if there's not enough energy and its not producing energy
+					if (game.resources[rsc_energy] <= 0)
+							continue;
 					if (tick && ((int)game.gameAge) % 2 == 0 && game.planets[i].shipPresence[0] < game.planets[i].radius)
 					{
+						if (game.resources[rsc_sbm] < game.shipClasses[0].buildCost)
+							break;
+						game.resources[rsc_sbm] -= game.shipClasses[0].buildCost;
 						float a = (rand() % 360) / (180.f/3.41f);
 						Ship* s = spawnShip(vecadd(vecf(cos(a)*game.planets[i].radius, sin(a)* game.planets[i].radius), game.planets[i].position), 0, 0);
 						s->velocity = normalize(vecadd(vecsub(s->position, game.planets[i].position), randomBetween(vecf(-0.1f, -0.1f), vecf(0.1f, 0.1f))));
 					}
 					break;
 				case 6: // shipyard(bomber), produces 1 ship every 15 seconds
+					// deactivate building if there's not enough energy and its not producing energy
+					if (game.resources[rsc_energy] <= 0)
+							continue;
 					if (tick && ((int)game.gameAge) % 10 == 0 && game.planets[i].shipPresence[1] < game.planets[i].radius)
 					{
+						if (game.resources[rsc_sbm] < game.shipClasses[1].buildCost)
+							break;
+						game.resources[rsc_sbm] -= game.shipClasses[1].buildCost;
 						float a = (rand() % 360) / (180.f/3.41f);
 						Ship* s = spawnShip(vecadd(vecf(cos(a)*game.planets[i].radius, sin(a)* game.planets[i].radius), game.planets[i].position), 1, 0);
 						s->velocity = normalize(vecadd(vecsub(s->position, game.planets[i].position), randomBetween(vecf(-0.1f, -0.1f), vecf(0.1f, 0.1f))));
 					}
 					break;
 				case 7: // shipyard(cruiser), produces 1 ship every 60 seconds
+					// deactivate building if there's not enough energy and its not producing energy
+					if (game.resources[rsc_energy] <= 0)
+							continue;
 					if (tick && ((int)game.gameAge) % 30 == 0 && game.planets[i].shipPresence[2] < game.planets[i].radius)
 					{
+						if (game.resources[rsc_sbm] < game.shipClasses[2].buildCost)
+							break;
+						game.resources[rsc_sbm] -= game.shipClasses[2].buildCost;
 						float a = (rand() % 360) / (180.f/3.41f);
 						Ship* s = spawnShip(vecadd(vecf(cos(a)*game.planets[i].radius, sin(a)* game.planets[i].radius), game.planets[i].position), 2, 0);
 						s->velocity = normalize(vecadd(vecsub(s->position, game.planets[i].position), randomBetween(vecf(-0.1f, -0.1f), vecf(0.1f, 0.1f))));
@@ -731,6 +764,21 @@ void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) /
 	game.resources[rsc_energy] += resource_delta_scaled.x;
 	game.resources[rsc_sbm] += resource_delta_scaled.y;
 	game.resources[rsc_food] += resource_delta_scaled.z;
+
+	// update building selectors to reflect whether they can be purchased with the current amount of funds
+	UIElement* buildingSelector = getElementByName(&game.gui, "buildingSelector");
+	for (int i = 0; i < buildingSelector->numChildren; i++)
+	{
+		UIElement* elem = &buildingSelector->children[i];
+		if (game.resources[rsc_sbm] >= game.buildingPrices[elem->data])
+		{
+			elem->enabled = true;
+			elem->faceColor = vecf(1.f, 1.f, 1.f, 1.f);
+		} else {
+			elem->enabled = false;
+			elem->faceColor = vecf(0.5f, 0.5f, 0.5f, 1.f);
+		}
+	}
 
 	printf("Resources: %f %f %f, delta %f %f %f\n", game.resources[0], game.resources[1], game.resources[2], resource_delta.x, resource_delta.y, resource_delta.z);
 }
