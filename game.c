@@ -148,6 +148,7 @@ void clearGame()
 		}
 		free(game.planets);
 	}
+	game.numShips = 0;
 	game.numPlanets = 0;
 }
 
@@ -458,6 +459,10 @@ void newGame(int seed, float galaxyRadius, int planets)
 	game.nextWave.shipsToSpawn[1] = 5;
 	game.nextWave.shipsToSpawn[2] = 1;
 	game.nextWave.countdown = 5.f;
+
+	game.resources[rsc_energy] = 100;
+	game.resources[rsc_sbm] = 450;
+	game.resources[rsc_food] = 300;
 
 	spawnShip(vecf(25.f,-25.f),0,0);
 }
