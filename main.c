@@ -193,11 +193,6 @@ int main(int argc, char const *argv[])
 		cruiser.energyUsage = 0.5f;
 		game.shipClasses[2] = cruiser;
 
-		// for (int i = 0; i < 10; ++i)
-		// {
-		// 	printf("%f\n", randomFloat());
-		// }
-
 		newGame(GetTickCount(), 250, 15);
 		loadAssets();
 		createUI();
