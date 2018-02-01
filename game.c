@@ -409,6 +409,7 @@ void handleMouseButtons(uint8_t button, int32_t x, int32_t y)
 
 void newGame(int seed, float galaxyRadius, int planets)
 {
+	printf("Generating game using seed %d\n", seed);
 	// make sure no old data survives
 	clearGame();
 	
@@ -463,6 +464,7 @@ void newGame(int seed, float galaxyRadius, int planets)
 	game.nextWave.shipsToSpawn[1] = 5;
 	game.nextWave.shipsToSpawn[2] = 1;
 	game.nextWave.countdown = 5.f;
+	game.nextWave.waveNumber = 1;
 
 	game.resources[rsc_energy] = 100;
 	game.resources[rsc_sbm] = 450;
@@ -523,7 +525,7 @@ void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) /
 
 	if (player_shipcount == 0)
 	{
-		printf("\n\n\n==================\n\nYou lost...\n\n==================\n\n\n\n");
+		printf("\n\n\n==================\n\nYou lost to wave number %d...\n\n==================\n\n\n\n", game.currentWave.waveNumber + 1);
 		game.speedModifier = 0.f;
 	}
 
@@ -531,6 +533,7 @@ void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) /
 	if (enemy_shipcount == 0 && game.currentWave.countdown < 0.f)
 	{
 		game.currentWave = game.nextWave;
+		game.nextWave.waveNumber++;
 		for (int i = 0; i < 3; ++i)
 		{
 			game.nextWave.shipsToSpawn[i] *= 1.5;
@@ -658,9 +661,9 @@ void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) /
 		for (int s = 0; s < game.numShips; s++)
 		{
 			// if (game.ships[s].team != p->team) continue;
-			float r = veclensqr(vecsub(game.ships[s].position, p->position));
+			float r = veclen(vecsub(game.ships[s].position, p->position));
 			if (r > 0.f)
-				p->shipPresence[game.ships[s].type] += min(1.f / r, 1.f) * (2 - game.ships[s].team * 3); //r < p->radius * 4.f ? 1.f : 0.f;
+				p->shipPresence[game.ships[s].type] += min(1.f / r, 1.f);
 		}
 		presenceSum[0] += p->shipPresence[0];
 		presenceSum[1] += p->shipPresence[1];
@@ -867,7 +870,7 @@ void renderGame()
 		Ship* s = &game.ships[i];
 		if (s->team == 0)
 		{
-			glColor3f(0.f, 0.f, 1.f * (s->health/s->values->baseHealth));
+			glColor3f(0.f, 1.f * (s->health/s->values->baseHealth), 0.f);
 		} else {
 			glColor3f(1.f * (s->health/s->values->baseHealth), 0.f, 0.f);
 		}

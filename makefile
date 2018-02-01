@@ -11,3 +11,7 @@ debug:
 
 compile:
 	g++ -o oofswarm main.c $(CFLAGS)
+
+present:
+	g++ -o oofswarm main.c $(CFLAGS)
+	./oofswarm 1377613843

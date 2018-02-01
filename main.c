@@ -205,7 +205,10 @@ int main(int argc, char const *argv[])
 		game.buildingPrices[6] = 500;
 		game.buildingPrices[7] = 1000;
 
-		newGame(GetTickCount(), 250, 15);
+		if (argc > 1)
+			newGame(strtol(argv[1], NULL, 10), 250, 15);
+		else
+			newGame(GetTickCount(), 250, 15);
 		loadAssets();
 		createUI();
 		game.window_width = 640;
