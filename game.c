@@ -135,7 +135,7 @@ void clearGame()
 {
 	game.speedModifier = 1.f;
 	game.leftoverStep = 0.0f;
-	game.steplimiting = true;
+	game.steplimiting = false;
 	game.seed = 0;
 	game.galaxyRadius = 0;
 	game.cameraShift = vecf(0.f, 0.f);
@@ -322,6 +322,7 @@ void handleKeys( unsigned char key, int x, int y )
 	}
 	if (key == SDL_SCANCODE_KP_MINUS)
 	{
+		game.speedModifier /= 2.f;
 		printf("speedModifier is now %f\n", game.speedModifier);
 	}
 	if (key == SDL_SCANCODE_S)
@@ -467,7 +468,7 @@ void newGame(int seed, float galaxyRadius, int planets)
 	game.resources[rsc_sbm] = 450;
 	game.resources[rsc_food] = 300;
 
-	spawnShip(vecf(25.f,-25.f),0,0);
+	spawnShip(vecf(25.f,-25.f),0,0)->velocity=vecf(0.1,0.0);
 }
 
 void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) // 1/0.016 = 60 fps
@@ -495,8 +496,9 @@ void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) /
 		return;
 	}
 
-	// "remove" dead ships(and count enemy ships)
+	// "remove" dead ships(and count ships)
 	int enemy_shipcount = 0;
+	int player_shipcount = 0;
 	for (int i = game.numShips; i >= 0; i--)
 	{
 		if (game.ships[i].health < 0.f)
@@ -513,10 +515,16 @@ void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) /
 			game.numShips--;
 		} else {
 			if (game.ships[i].team == 1)
-			{
 				enemy_shipcount++;
-			}
+			if (game.ships[i].team == 0)
+				player_shipcount++;
 		}
+	}
+
+	if (player_shipcount == 0)
+	{
+		printf("\n\n\n==================\n\nYou lost...\n\n==================\n\n\n\n");
+		game.speedModifier = 0.f;
 	}
 
 	// advance wave
@@ -649,10 +657,10 @@ void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) /
 		p->shipPresence[2] = 0;
 		for (int s = 0; s < game.numShips; s++)
 		{
-			if (game.ships[s].team != p->team) continue;
-			float r = veclen(vecsub(game.ships[s].position, p->position));
+			// if (game.ships[s].team != p->team) continue;
+			float r = veclensqr(vecsub(game.ships[s].position, p->position));
 			if (r > 0.f)
-				p->shipPresence[game.ships[s].type] += min(1.f / r, 1.f); //r < p->radius * 4.f ? 1.f : 0.f;
+				p->shipPresence[game.ships[s].type] += min(1.f / r, 1.f) * (2 - game.ships[s].team * 3); //r < p->radius * 4.f ? 1.f : 0.f;
 		}
 		presenceSum[0] += p->shipPresence[0];
 		presenceSum[1] += p->shipPresence[1];
