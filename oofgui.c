@@ -28,7 +28,7 @@ struct UIElement
 
 UIElement* addChild(UIElement* root)
 {
-	printf("spawning child element\n");
+	//printf("spawning child element\n");
 	root->numChildren += 1;
 	UIElement* newarray = (UIElement*) realloc(root->children, root->numChildren * sizeof(UIElement));
 	if (newarray)
@@ -64,7 +64,7 @@ UIElement* getElementAt(UIElement* root, float x, float y)
 	y -= root->position.y;
 	x /= root->size.x;
 	y /= root->size.y;
-	printf("%f %f\n", x, y);
+	//printf("%f %f\n", x, y);
 	if (x < 0.f || x > 1.f || y < 0.f || y > 1.f)
 	{
 		return NULL;

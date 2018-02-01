@@ -300,13 +300,13 @@ void resizeWindow(SDL_Event event)
 		return;
 	}
 
-	printf("1st name %s %s\n", game.gui.children[0].name, squareCenter->name);
+	//printf("1st name %s %s\n", game.gui.children[0].name, squareCenter->name);
 
 	squareCenter->position = vecf(xpadding / 2.f, ypadding / 2.f);
 	squareCenter->size = vecf(1.f - xpadding, 1.f - ypadding);
-	printf("%s %f %f - %f %f\n", squareCenter->name,
-		squareCenter->position.x, squareCenter->position.y, 
-		squareCenter->size.x, squareCenter->size.y);
+	//printf("%s %f %f - %f %f\n", squareCenter->name,
+	//	squareCenter->position.x, squareCenter->position.y, 
+	//	squareCenter->size.x, squareCenter->size.y);
 
 	printf("Window resized %d %d\n", game.window_width, game.window_height);
 }
@@ -316,10 +316,13 @@ void handleKeys( unsigned char key, int x, int y )
 	if (key == SDL_SCANCODE_KP_PLUS)
 	{
 		game.speedModifier *= 2.f;
+		if (game.speedModifier > 32.f)
+			game.speedModifier = 32.f;
+		printf("speedModifier is now %f\n", game.speedModifier);
 	}
 	if (key == SDL_SCANCODE_KP_MINUS)
 	{
-		game.speedModifier /= 2.f;
+		printf("speedModifier is now %f\n", game.speedModifier);
 	}
 	if (key == SDL_SCANCODE_S)
 	{
@@ -361,7 +364,7 @@ void handleMouseButtons(uint8_t button, int32_t x, int32_t y)
 {
 	float fx = (float) x / game.window_width;
 	float fy = (float) y / game.window_height;
-	printf("%f %f\n", fx, fy);
+	//printf("%f %f\n", fx, fy);
 	UIElement* elem = getElementAt(&game.gui, fx, fy);
 	if (elem)
 	{
@@ -383,7 +386,7 @@ void handleMouseButtons(uint8_t button, int32_t x, int32_t y)
 	fy *= -200 / game.cameraZoom;
 	for (int i = 0; i < game.numPlanets; i++)
 	{
-		printf("%f %f - %f %f = %f?\n", fx, fy, game.planets[i].position.x, game.planets[i].position.y, game.planets[i].radius);
+		//printf("%f %f - %f %f = %f?\n", fx, fy, game.planets[i].position.x, game.planets[i].position.y, game.planets[i].radius);
 		if (veclen(vecsub(game.planets[i].position, vecf(fx, fy))) <= game.planets[i].radius)
 		{
 			for (int j = 0; j < 20; j++)
@@ -548,7 +551,7 @@ void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) /
 	if ((int)game.gameAge != (int)(game.gameAge+step))
 	{
 		tick = true;
-		printf("tick! %d %d %f\n", (int)game.gameAge, (int)(game.gameAge+step), game.gameAge+step);
+		//printf("tick! %d %d %f\n", (int)game.gameAge, (int)(game.gameAge+step), game.gameAge+step);
 	}
 	for (int i = 0; i < game.numPlanets; i++)
 	{
@@ -639,7 +642,6 @@ void tickGame(float step, bool fixedStepSize = false, float stepsize = 0.016f) /
 		Planet* p = &(game.planets[i]);
 		if (p->team == 0)
 		{
-			printf("%f\n", sqrt(p->radius));
 			resource_delta.z -= sqrt(p->radius); // subtract some food
 		}
 		p->shipPresence[0] = 0;
