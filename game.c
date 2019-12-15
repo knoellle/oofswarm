@@ -313,14 +313,14 @@ void resizeWindow(SDL_Event event)
 
 void handleKeys( unsigned char key, int x, int y )
 {
-	if (key == SDL_SCANCODE_KP_PLUS)
+	if (key == SDL_SCANCODE_RIGHTBRACKET)
 	{
 		game.speedModifier *= 2.f;
 		if (game.speedModifier > 32.f)
 			game.speedModifier = 32.f;
 		printf("speedModifier is now %f\n", game.speedModifier);
 	}
-	if (key == SDL_SCANCODE_KP_MINUS)
+	if (key == SDL_SCANCODE_LEFTBRACKET)
 	{
 		game.speedModifier /= 2.f;
 		printf("speedModifier is now %f\n", game.speedModifier);

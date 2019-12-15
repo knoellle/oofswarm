@@ -3,7 +3,7 @@
 ## Keybinds
 
 * Change game speed
-	`Numpad +` & `Numpad -`
+	`[` & `]`
 * Spawn enemy ship wave
     `S`
 * Pause the game
